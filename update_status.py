@@ -3,6 +3,9 @@ from urllib import request
 from urllib import parse
 from datetime import datetime
 
+# API Key from `https://uptimerobot.com/`.
+UPTIME_ROBOT_API_KEY = ''
+
 
 class UptimeRobot(object):
     """ Intermediate class for setting uptime stats.
@@ -201,7 +204,7 @@ class Monitor(object):
     def update_all_monitors(self):
         """ Update all monitors uptime and status.
         """
-        uptime_robot = UptimeRobot()
+        uptime_robot = UptimeRobot(UPTIME_ROBOT_API_KEY)
         success, response = uptime_robot.get_monitors(response_times=1)
         if success:
             monitors = response.get('monitors').get('monitor')
