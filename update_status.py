@@ -66,7 +66,6 @@ class CachetHq(object):
         self.base_url = base_url
 
     def update_component(self, id_component=1, status=None):
-        """"""
         component_status = None
 
         # Not Checked yet and Up
@@ -151,7 +150,16 @@ class CachetHq(object):
         )
         response = request.urlopen(req)
         content = response.read().decode('utf-8')
-        return json.loads(content).get('data')[-1]
+
+        if json.loads(content).get('data'):
+            return json.loads(content).get('data')[0]
+        else:
+            return {
+                'created_at': datetime.now().date().strftime(
+                    '%Y-%m-%d %H:%M:%S'
+                )
+            }
+
 
 
 class Monitor(object):
@@ -184,12 +192,10 @@ class Monitor(object):
                 website_config['metric_id']
             ).get('created_at'), '%Y-%m-%d %H:%M:%S')
 
-        print(last_date_metric_point)
-
         for point in reversed(monitor.get('responsetime')):
             point_datetime = datetime.strptime(
                 point.get('datetime'),
-                '%d/%m/%Y %H:%M:%S'
+                '%m/%d/%Y %H:%M:%S'
             )
             if point_datetime > last_date_metric_point:
                 print(cachet.set_data_metrics(
