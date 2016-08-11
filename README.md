@@ -9,10 +9,10 @@ To get started, you have to specify your Cachet settings and UptimeRobot api key
 UPTIME_ROBOT_API_KEY = 'your-api-key'
 ```
 
+In the `MONITOR_LIST` variable you have to specify some settings for each monitor. 
 
 ```python 
-# Specify variables for each Status Page you want to setup.
-monitors_map = {
+MONITOR_LIST = {
     'https://mydomain.com': {
         'api_key': 'cachet-api-key',
         'status_url': 'https://your-status-page-url.com',
@@ -23,9 +23,9 @@ monitors_map = {
 ```
 
 * `api_key`:  Global Cachet API key
-* `status_url`: URL of the status page your setting up. (Used to push using the API)
+* `status_url`: URL of the API of the status page you want to show the uptime in.
 * `component_id`: Id of the Cachet component with site status
-* `metric_id`: Id of the uptime metric in your Cachet installation
+* `metric_id`: Id of the metric where you want to show the uptime graph.
 
 ### Usage
 
@@ -37,4 +37,9 @@ m = Monitor()
 
 # Gets uptime data from UptimeRobot and send to Cachet.
 m.update_all_monitors()
+
+>>> Updating monitor MyDomain: URL: https://mydomain.com - id: 12345678
+>>> Created metric with id 27:
+>>> {'data': {'id': 27, 'calculated_value': 7872, 'value': 328, 'updated_at': '2016-08-11 08:35:32', 'created_at': '2016-08-11 09:59:59', 'counter': 24, 'metric_id': 1}}
+>>> ...
 ```
