@@ -6,6 +6,23 @@ from datetime import datetime
 # API Key from `https://uptimerobot.com/`.
 UPTIME_ROBOT_API_KEY = ''
 
+# List of monitors to update.
+# Each monitor must be an active UptimeRobot monitor and also
+# there must be a Cachet metric and component for it.
+MONITOR_LIST = {
+    'https://mydomain.com': {
+        'api_key': 'cachet-api-key',
+        'status_url': 'https://your-status-page-url.com',
+        'component_id': 1,
+        'metric_id': 1,
+    }
+}
+
+# Terminal colors.
+GREEN = '\033[92m'
+RED = '\033[91m'
+ENDC = '\033[0m'
+
 
 class UptimeRobot(object):
     """ Intermediate class for setting uptime stats.
@@ -64,7 +81,7 @@ class CachetHq(object):
     CACHET_SEEMS_DOWN = 3
     CACHET_DOWN = 4
 
-    def __init__(self, api_key='', base_url='http://localhost/api/v1'):
+    def __init__(self, api_key='', base_url=''):
         self.api_key = api_key
         self.base_url = base_url
 
@@ -120,7 +137,7 @@ class CachetHq(object):
         )
         response = request.urlopen(req)
         content = response.read().decode('utf-8')
-        return content
+        return json.loads(content)
 
     def get_last_metric_point(self, id_metric):
         url = '{0}/metrics/{1}/points/'.format(self.base_url, id_metric)
@@ -164,22 +181,12 @@ class CachetHq(object):
             }
 
 
-
 class Monitor(object):
-    monitors_map = {
-        'https://mydomain.com': {
-            'api_key': 'cachet-api-key',
-            'status_url': 'https://your-status-page-url.com',
-            'component_id': 1,
-            'metric_id': 1,
-        }
-    }
-
     def send_data_to_catchet(self, monitor):
         """ Posts data to Cachet API.
             Data sent is the value of last `Uptime`.
         """
-        website_config = self.monitors_map[monitor.get('url')]
+        website_config = MONITOR_LIST[monitor.get('url')]
         cachet = CachetHq(
             website_config['api_key'],
             website_config['status_url']
@@ -201,11 +208,19 @@ class Monitor(object):
                 '%m/%d/%Y %H:%M:%S'
             )
             if point_datetime > last_date_metric_point:
-                print(cachet.set_data_metrics(
+                metric = cachet.set_data_metrics(
                     point.get('value'),
                     int(point_datetime.strftime('%s')),
                     website_config['metric_id']
-                ))
+                )
+                print(
+                    '{0}Created metric with id {1}{2}:'.format(
+                        GREEN,
+                        metric['data']['id'],
+                        ENDC,
+                    )
+                )
+                print(metric)
 
     def update_all_monitors(self):
         """ Update all monitors uptime and status.
@@ -215,4 +230,18 @@ class Monitor(object):
         if success:
             monitors = response.get('monitors').get('monitor')
             for monitor in monitors:
+                print('{0}Updating monitor {1}: URL: {2} - id: {3}{4}'.format(
+                    GREEN,
+                    monitor['friendlyname'],
+                    monitor['url'],
+                    monitor['id'],
+                    ENDC,
+                ))
                 self.send_data_to_catchet(monitor)
+        else:
+            print(
+                '{0}No data was returned from UptimeMonitor {1}'.format(
+                    RED,
+                    ENDC
+                )
+            )
