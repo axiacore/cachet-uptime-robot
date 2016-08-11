@@ -29,7 +29,10 @@ MONITOR_LIST = {
 
 ### Usage
 
-Run this python script using a cron job.
+Register a cron that runs `cron.py` every 5 minutes.
+```bash 
+crontab -e
+```
 ```python
 
 # Create a monitor instance 
