@@ -30,10 +30,25 @@ MONITOR_LIST = {
 ### Usage
 
 Register a cron that runs `cron.py` every 5 minutes.
+
 ```bash 
+# Open cron file to edit.
 crontab -e
 ```
+
+Edit the crontab file and add this line:
+```bash
+*/5 * * * * python3 ~/cachet-uptime-robot/cron.py
+```
+
+_Note that the path of cron.py may vary depending on the location you cloned the repository_
+
+### Running manually
+
+You can also update your Cachet data manually by running this:
+
 ```python
+from update_status import Monitor
 
 # Create a monitor instance 
 m = Monitor()
