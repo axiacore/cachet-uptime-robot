@@ -15,7 +15,7 @@ In the `MONITOR_LIST` variable you have to specify some settings for each monito
 MONITOR_LIST = {
     'https://mydomain.com': {
         'api_key': 'cachet-api-key',
-        'status_url': 'https://your-status-page-url.com',
+        'status_url': 'https://your-status-page-url.com/api/v1',
         'component_id': 1,
         'metric_id': 1,
     }
