@@ -38,7 +38,7 @@ MONITOR_LIST = {
 
 Register a cron that runs `cron.py` every 5 minutes.
 
-```bash 
+```bash
 # Open cron file to edit.
 crontab -e
 ```
@@ -57,7 +57,7 @@ You can also update your Cachet data manually by running this:
 ```python
 from update_status import Monitor
 
-# Create a monitor instance 
+# Create a monitor instance
 m = Monitor()
 
 # Gets uptime data from UptimeRobot and send to Cachet.

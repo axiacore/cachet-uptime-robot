@@ -1,35 +1,16 @@
 #!/usr/bin/env python3
-
 import json
+import sys
+import configparser
 from urllib import request
 from urllib import parse
 from datetime import datetime
-
-# API Key from `https://uptimerobot.com/`.
-UPTIME_ROBOT_API_KEY = ''
-
-# List of monitors to update.
-# Each monitor must be an active UptimeRobot monitor and also
-# there must be a Cachet metric and component for it.
-MONITOR_LIST = {
-    'https://mydomain.com': {
-        'api_key': 'cachet-api-key',
-        'status_url': 'https://your-status-page-url.com',
-        'component_id': 1,
-        'metric_id': 1,
-    }
-}
-
-# Terminal colors.
-GREEN = '\033[92m'
-RED = '\033[91m'
-ENDC = '\033[0m'
 
 
 class UptimeRobot(object):
     """ Intermediate class for setting uptime stats.
     """
-    def __init__(self, api_key=''):
+    def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = 'https://api.uptimerobot.com/'
 
@@ -83,9 +64,9 @@ class CachetHq(object):
     CACHET_SEEMS_DOWN = 3
     CACHET_DOWN = 4
 
-    def __init__(self, api_key='', base_url=''):
-        self.api_key = api_key
-        self.base_url = base_url
+    def __init__(self, cachet_api_key, cachet_url):
+        self.cachet_api_key = cachet_api_key
+        self.cachet_url = cachet_url
 
     def update_component(self, id_component=1, status=None):
         component_status = None
@@ -104,7 +85,7 @@ class CachetHq(object):
 
         if component_status:
             url = '{0}/{1}/{2}/'.format(
-                self.base_url,
+                self.cachet_url,
                 'components',
                 id_component
             )
@@ -115,16 +96,14 @@ class CachetHq(object):
                 url=url,
                 data=data,
                 method='PUT',
-                headers={
-                    'X-Cachet-Token': self.api_key,
-                }
+                headers={'X-Cachet-Token': self.cachet_api_key},
             )
             response = request.urlopen(req)
             content = response.read().decode('utf-8')
             return content
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
-        url = '{0}/metrics/{1}/points/'.format(self.base_url, id_metric)
+        url = '{0}/metrics/{1}/points/'.format(self.cachet_url, id_metric)
         data = parse.urlencode({
             'value': value,
             'timestamp': timestamp,
@@ -133,21 +112,19 @@ class CachetHq(object):
             url=url,
             data=data,
             method='POST',
-            headers={
-                'X-Cachet-Token': self.api_key,
-            }
+            headers={'X-Cachet-Token': self.cachet_api_key},
         )
         response = request.urlopen(req)
-        content = response.read().decode('utf-8')
-        return json.loads(content)
+
+        return json.loads(response.read().decode('utf-8'))
 
     def get_last_metric_point(self, id_metric):
-        url = '{0}/metrics/{1}/points/'.format(self.base_url, id_metric)
+        url = '{0}/metrics/{1}/points/'.format(self.cachet_url, id_metric)
         req = request.Request(
             url=url,
             method='GET',
             headers={
-                'X-Cachet-Token': self.api_key,
+                'X-Cachet-Token': self.cachet_api_key,
             }
         )
         response = request.urlopen(req)
@@ -158,7 +135,7 @@ class CachetHq(object):
         ).get('meta').get('pagination').get('total_pages')
 
         url = '{0}/metrics/{1}/points?page={2}'.format(
-            self.base_url,
+            self.cachet_url,
             id_metric,
             last_page
         )
@@ -166,32 +143,36 @@ class CachetHq(object):
         req = request.Request(
             url=url,
             method='GET',
-            headers={
-                'X-Cachet-Token': self.api_key,
-            }
+            headers={'X-Cachet-Token': self.cachet_api_key},
         )
         response = request.urlopen(req)
         content = response.read().decode('utf-8')
 
         if json.loads(content).get('data'):
-            return json.loads(content).get('data')[0]
+            data = json.loads(content).get('data')[0]
         else:
-            return {
+            data = {
                 'created_at': datetime.now().date().strftime(
                     '%Y-%m-%d %H:%M:%S'
                 )
             }
 
+        return data
+
 
 class Monitor(object):
+    def __init__(self, monitor_list, api_key):
+        self.monitor_list = monitor_list
+        self.api_key = api_key
+
     def send_data_to_catchet(self, monitor):
         """ Posts data to Cachet API.
             Data sent is the value of last `Uptime`.
         """
-        website_config = MONITOR_LIST[monitor.get('url')]
+        website_config = self.monitor_list[monitor.get('url')]
         cachet = CachetHq(
-            website_config['api_key'],
-            website_config['status_url']
+            api_key=website_config['api_key'],
+            base_url=website_config['status_url'],
         )
 
         cachet.update_component(
@@ -215,35 +196,45 @@ class Monitor(object):
                     int(point_datetime.strftime('%s')),
                     website_config['metric_id']
                 )
-                print(
-                    '{0}Created metric with id {1}{2}:'.format(
-                        GREEN,
-                        metric['data']['id'],
-                        ENDC,
-                    )
-                )
-                print(metric)
+                print('Metric created: {0}'.format(metric))
 
-    def update_all_monitors(self):
+    def update(self):
         """ Update all monitors uptime and status.
         """
-        uptime_robot = UptimeRobot(UPTIME_ROBOT_API_KEY)
+        uptime_robot = UptimeRobot(self.api_key)
         success, response = uptime_robot.get_monitors(response_times=1)
         if success:
             monitors = response.get('monitors').get('monitor')
             for monitor in monitors:
-                print('{0}Updating monitor {1}: URL: {2} - id: {3}{4}'.format(
-                    GREEN,
+                print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
                     monitor['friendlyname'],
                     monitor['url'],
                     monitor['id'],
-                    ENDC,
                 ))
                 self.send_data_to_catchet(monitor)
         else:
-            print(
-                '{0}No data was returned from UptimeMonitor {1}'.format(
-                    RED,
-                    ENDC
-                )
-            )
+            print('ERROR: No data was returned from UptimeMonitor')
+
+if __name__ == "__main__":
+    config = configparser.ConfigParser()
+    config.read(sys.argv[1])
+    sections = config.sections()
+
+    if not sections:
+        print('File path is not valid')
+        sys.exit(1)
+
+    uptime_robot_api_key = None
+    monitor_dict = {}
+    for element in sections:
+        if element == 'uptimeRobot':
+            uptime_robot_api_key = config[element]['UptimeRobotMainApiKey']
+        else:
+            monitor_dict[element] = {
+                'cachet_api_key': config[element]['CachetApiKey'],
+                'cachet_url': config[element]['CachetUrl'],
+                'metric_id': config[element]['MetricId'],
+            }
+
+    monitor = Monitor(monitor_list=monitor_dict, api_key=uptime_robot_api_key)
+    monitor.update()
