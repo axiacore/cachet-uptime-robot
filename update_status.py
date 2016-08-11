@@ -169,10 +169,15 @@ class Monitor(object):
         """ Posts data to Cachet API.
             Data sent is the value of last `Uptime`.
         """
-        website_config = self.monitor_list[monitor.get('url')]
+        try:
+            website_config = self.monitor_list[monitor.get('url')]
+        except KeyError:
+            print('ERROR: monitor is not valid')
+            sys.exit(1)
+
         cachet = CachetHq(
-            api_key=website_config['api_key'],
-            base_url=website_config['status_url'],
+            cachet_api_key=website_config['api_key'],
+            cachet_url=website_config['status_url'],
         )
 
         cachet.update_component(
@@ -215,26 +220,27 @@ class Monitor(object):
         else:
             print('ERROR: No data was returned from UptimeMonitor')
 
-if __name__ == "__main__":
-    config = configparser.ConfigParser()
-    config.read(sys.argv[1])
-    sections = config.sections()
 
-    if not sections:
-        print('File path is not valid')
+if __name__ == "__main__":
+    CONFIG = configparser.ConfigParser()
+    CONFIG.read(sys.argv[1])
+    SECTIONS = CONFIG.sections()
+
+    if not SECTIONS:
+        print('ERROR: File path is not valid')
         sys.exit(1)
 
-    uptime_robot_api_key = None
-    monitor_dict = {}
-    for element in sections:
+    UPTIME_ROBOT_API_KEY = None
+    MONITOR_DICT = {}
+    for element in SECTIONS:
         if element == 'uptimeRobot':
-            uptime_robot_api_key = config[element]['UptimeRobotMainApiKey']
+            uptime_robot_api_key = CONFIG[element]['UptimeRobotMainApiKey']
         else:
-            monitor_dict[element] = {
-                'cachet_api_key': config[element]['CachetApiKey'],
-                'cachet_url': config[element]['CachetUrl'],
-                'metric_id': config[element]['MetricId'],
+            MONITOR_DICT[element] = {
+                'cachet_api_key': CONFIG[element]['CachetApiKey'],
+                'cachet_url': CONFIG[element]['CachetUrl'],
+                'metric_id': CONFIG[element]['MetricId'],
             }
 
-    monitor = Monitor(monitor_list=monitor_dict, api_key=uptime_robot_api_key)
-    monitor.update()
+    MONITOR = Monitor(monitor_list=MONITOR_DICT, api_key=uptime_robot_api_key)
+    MONITOR.update()
