@@ -39,7 +39,7 @@ crontab -e
 
 Edit the crontab file and add this line:
 ```bash
-*/5 * * * * python3 ~/path/update_status.py ~/path/config.ini
+*/1 * * * * python3 ~/path/update_status.py ~/path/config.ini
 ```
 
 _Note that the path of cron.py may vary depending on the location you cloned the repository_
