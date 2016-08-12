@@ -192,7 +192,7 @@ class Monitor(object):
         if 'component_id' in website_config:
             cachet.update_component(
                 website_config['component_id'],
-                monitor.get('status')
+                int(monitor.get('status'))
             )
 
         metric = cachet.set_data_metrics(
