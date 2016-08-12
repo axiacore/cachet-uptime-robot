@@ -210,12 +210,13 @@ class Monitor(object):
         if success:
             monitors = response.get('monitors').get('monitor')
             for monitor in monitors:
-                print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
-                    monitor['friendlyname'],
-                    monitor['url'],
-                    monitor['id'],
-                ))
-                self.send_data_to_catchet(monitor)
+                if monitor['url'] in self.monitor_list:
+                    print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
+                        monitor['friendlyname'],
+                        monitor['url'],
+                        monitor['id'],
+                    ))
+                    self.send_data_to_catchet(monitor)
         else:
             print('ERROR: No data was returned from UptimeMonitor')
 
