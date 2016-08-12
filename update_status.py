@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sys
+import time
 import configparser
 from urllib import request
 from urllib import parse
@@ -84,7 +85,7 @@ class CachetHq(object):
             component_status = self.CACHET_DOWN
 
         if component_status:
-            url = '{0}/{1}/{2}/'.format(
+            url = '{0}/api/v1/{1}/{2}/'.format(
                 self.cachet_url,
                 'components',
                 id_component
@@ -103,7 +104,11 @@ class CachetHq(object):
             return content
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
-        url = '{0}/metrics/{1}/points/'.format(self.cachet_url, id_metric)
+        url = '{0}/api/v1/metrics/{1}/points/'.format(
+            self.cachet_url,
+            id_metric
+        )
+
         data = parse.urlencode({
             'value': value,
             'timestamp': timestamp,
@@ -119,7 +124,11 @@ class CachetHq(object):
         return json.loads(response.read().decode('utf-8'))
 
     def get_last_metric_point(self, id_metric):
-        url = '{0}/metrics/{1}/points/'.format(self.cachet_url, id_metric)
+        url = '{0}/api/v1/metrics/{1}/points/'.format(
+            self.cachet_url,
+            id_metric
+        )
+
         req = request.Request(
             url=url,
             method='GET',
@@ -134,7 +143,7 @@ class CachetHq(object):
             content
         ).get('meta').get('pagination').get('total_pages')
 
-        url = '{0}/metrics/{1}/points?page={2}'.format(
+        url = '{0}/api/v1/metrics/{1}/points?page={2}'.format(
             self.cachet_url,
             id_metric,
             last_page
@@ -176,32 +185,22 @@ class Monitor(object):
             sys.exit(1)
 
         cachet = CachetHq(
-            cachet_api_key=website_config['api_key'],
-            cachet_url=website_config['status_url'],
+            cachet_api_key=website_config['cachet_api_key'],
+            cachet_url=website_config['cachet_url'],
         )
 
-        cachet.update_component(
-            website_config['component_id'],
-            monitor.get('status')
-        )
-
-        last_date_metric_point = datetime.strptime(
-            cachet.get_last_metric_point(
-                website_config['metric_id']
-            ).get('created_at'), '%Y-%m-%d %H:%M:%S')
-
-        for point in reversed(monitor.get('responsetime')):
-            point_datetime = datetime.strptime(
-                point.get('datetime'),
-                '%m/%d/%Y %H:%M:%S'
+        if 'component_id' in website_config:
+            cachet.update_component(
+                website_config['component_id'],
+                monitor.get('status')
             )
-            if point_datetime > last_date_metric_point:
-                metric = cachet.set_data_metrics(
-                    point.get('value'),
-                    int(point_datetime.strftime('%s')),
-                    website_config['metric_id']
-                )
-                print('Metric created: {0}'.format(metric))
+
+        metric = cachet.set_data_metrics(
+            monitor.get('alltimeuptimeratio'),
+            int(time.time()),
+            website_config['metric_id']
+        )
+        print('Metric created: {0}'.format(metric))
 
     def update(self):
         """ Update all monitors uptime and status.
@@ -241,6 +240,10 @@ if __name__ == "__main__":
                 'cachet_url': CONFIG[element]['CachetUrl'],
                 'metric_id': CONFIG[element]['MetricId'],
             }
+            if 'ComponentId' in CONFIG[element]:
+                MONITOR_DICT[element].update({
+                    'component_id': CONFIG[element]['ComponentId'],
+                })
 
     MONITOR = Monitor(monitor_list=MONITOR_DICT, api_key=uptime_robot_api_key)
     MONITOR.update()
