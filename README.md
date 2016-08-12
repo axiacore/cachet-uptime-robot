@@ -1,6 +1,6 @@
 # Cachet Uptime Robot
 
-Cachet is an open source status page system, this repository is a Python script that does two things, **first**, it reads the status of a page in UptimeRobot and updates a cachet component based on that status and **second**, it updates a metric with the historic uptime data from Uptime Robot.
+Cachet is an open source status page system, this repository is a Python script that does two things, **first**, it reads the status of a page in UptimeRobot and updates a cachet component based on that status and **second**, it updates a metric with the historic uptime ratio from Uptime Robot.
 
 **Component status: Uptime Robot (left), Cachet (right)**
 
@@ -11,41 +11,35 @@ Cachet is an open source status page system, this repository is a Python script 
 
 ### Getting started 
 
-To get started, you have to specify your Cachet settings and UptimeRobot api key.
-```python
-UPTIME_ROBOT_API_KEY = 'your-api-key'
+To get started, you have to specify your Cachet and UptimeRobot settings and in **config.ini**.
+```ini
+[uptimeRobot]
+UptimeRobotMainApiKey = your-api-key
+
+[https://url.in.uptime.robot.com]
+CachetApiKey = cachet-api-key
+CachetUrl = https://status.mycompany.com
+MetricId = 1
+ComponentId = 1
 ```
 
-In the `MONITOR_LIST` variable you have to specify some settings for each monitor. 
-
-```python 
-MONITOR_LIST = {
-    'https://mydomain.com': {
-        'api_key': 'cachet-api-key',
-        'status_url': 'https://your-status-page-url.com/api/v1',
-        'component_id': 1,
-        'metric_id': 1,
-    }
-}
-```
-
-* `api_key`:  Global Cachet API key
-* `status_url`: URL of the API of the status page you want to show the uptime in.
-* `component_id`: Id of the Cachet component with site status
-* `metric_id`: Id of the metric where you want to show the uptime graph.
+* `CachetApiKey`:  Cachet API key.
+* `CachetUrl`: URL of the API of the status page you want to show the site availability in.
+* `MetricId`: Id of the Cachet metric with site availability.
+* `ComponentId`: (Optional) Id of the component you want to update on each check.
 
 ### Usage
 
 Register a cron that runs `cron.py` every 5 minutes.
 
-```bash 
+```bash
 # Open cron file to edit.
 crontab -e
 ```
 
 Edit the crontab file and add this line:
 ```bash
-*/5 * * * * python3 ~/cachet-uptime-robot/cron.py
+*/5 * * * * python3 ~/path/update_status.py ~/path/config.ini
 ```
 
 _Note that the path of cron.py may vary depending on the location you cloned the repository_
@@ -55,16 +49,8 @@ _Note that the path of cron.py may vary depending on the location you cloned the
 You can also update your Cachet data manually by running this:
 
 ```python
-from update_status import Monitor
+python3 update_status.py config.ini
 
-# Create a monitor instance 
-m = Monitor()
-
-# Gets uptime data from UptimeRobot and send to Cachet.
-m.update_all_monitors()
-
->>> Updating monitor MyDomain: URL: https://mydomain.com - id: 12345678
->>> Created metric with id 27:
->>> {'data': {'id': 27, 'calculated_value': 7872, 'value': 328, 'updated_at': '2016-08-11 08:35:32', 'created_at': '2016-08-11 09:59:59', 'counter': 24, 'metric_id': 1}}
->>> ...
+>>> Updating monitor MySite. URL: http://mysite.co. ID: 12345678
+>>> Metric created: {'data': {'calculated_value': 99.99, 'counter': 1, 'metric_id': 4, 'value': 99.99, 'created_at': '2016-08-12 08:23:10', 'updated_at': '2016-08-12 08:23:10', 'id': 99}}
 ```
