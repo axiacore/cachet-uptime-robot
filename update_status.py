@@ -83,7 +83,7 @@ class CachetHq(object):
             component_status = self.CACHET_DOWN
 
         if component_status:
-            url = '{0}/api/v1/{1}/{2}/'.format(
+            url = '{0}/api/v1/{1}/{2}'.format(
                 self.cachet_url,
                 'components',
                 id_component
@@ -102,7 +102,7 @@ class CachetHq(object):
             return content
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
-        url = '{0}/api/v1/metrics/{1}/points/'.format(
+        url = '{0}/api/v1/metrics/{1}/points'.format(
             self.cachet_url,
             id_metric
         )
@@ -122,7 +122,7 @@ class CachetHq(object):
         return json.loads(response.read().decode('utf-8'))
 
     def get_last_metric_point(self, id_metric):
-        url = '{0}/api/v1/metrics/{1}/points/'.format(
+        url = '{0}/api/v1/metrics/{1}/points'.format(
             self.cachet_url,
             id_metric
         )
