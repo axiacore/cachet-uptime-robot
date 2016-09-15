@@ -30,7 +30,7 @@ ComponentId = 1
 
 ### Usage
 
-Register a cron that runs `cron.py` every 5 minutes.
+Register a cron that runs `update_status.py` every 5 minutes.
 
 ```bash
 # Open cron file to edit.
@@ -39,10 +39,10 @@ crontab -e
 
 Edit the crontab file and add this line:
 ```bash
-*/1 * * * * python3 ~/path/update_status.py ~/path/config.ini
+*/5 * * * * python3 ~/path/update_status.py ~/path/config.ini
 ```
 
-_Note that the path of cron.py may vary depending on the location you cloned the repository_
+_Note that the path of the update_status.py & config.ini files may vary depending on the location you cloned the repository_
 
 ### Running manually
 
