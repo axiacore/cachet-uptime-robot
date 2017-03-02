@@ -24,6 +24,7 @@ ComponentId = 1
 ```
 
 * `CachetApiKey`:  Cachet API key.
+* `https://url.in.uptime.robot.com`: This exact "monitor" url set in UptimeRobot (eg. http://mywebsite.com) 
 * `CachetUrl`: URL of the API of the status page you want to show the site availability in.
 * `MetricId`: Id of the Cachet metric with site availability.
 * `ComponentId`: (Optional) Id of the component you want to update on each check.
