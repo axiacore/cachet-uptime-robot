@@ -13,29 +13,35 @@ class UptimeRobot(object):
     """
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = 'https://api.uptimerobot.com/'
+        self.base_url = 'https://api.uptimerobot.com/v2/getMonitors'
 
     def get_monitors(self, response_times=0, logs=0, uptime_ratio=30):
         """
         Returns status and response payload for all known monitors.
         """
-        url = self.base_url
-        url += 'getMonitors?apiKey={0}'.format(self.api_key)
-        url += '&noJsonCallback=1&format=json'
+        endpoint = self.base_url
+        data = parse.urlencode({
+                'api_key': format(self.api_key),
+                'format': 'json',
+                # responseTimes - optional (defines if the response time data of each
+                # monitor will be returned. Should be set to 1 for getting them.
+                # Default is 0)
+                'response_times': format(response_times),
+                 # logs - optional (defines if the logs of each monitor will be
+                # returned. Should be set to 1 for getting the logs. Default is 0)
+                'logs': format(logs),
+                # customUptimeRatio - optional (defines the number of days to calculate
+                # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
+                # uptime ratios for those periods)
+                'custom_uptime_ratios': format(uptime_ratio)
+            }).encode('utf-8')
 
-        # responseTimes - optional (defines if the response time data of each
-        # monitor will be returned. Should be set to 1 for getting them.
-        # Default is 0)
-        url += '&responseTimes={0}'.format(response_times)
-
-        # logs - optional (defines if the logs of each monitor will be
-        # returned. Should be set to 1 for getting the logs. Default is 0)
-        url += '&logs={0}'.format(logs)
-
-        # customUptimeRatio - optional (defines the number of days to calculate
-        # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
-        # uptime ratios for those periods)
-        url += '&customUptimeRatio={0}'.format(uptime_ratio)
+        url = request.Request(
+            url=endpoint,
+            data=data,
+            method='POST',
+            headers={'content-type': "application/x-www-form-urlencoded",'cache-control': "no-cache"},
+        )
 
         # Verifying in the response is jsonp in otherwise is error
         response = request.urlopen(url)
@@ -192,7 +198,7 @@ class Monitor(object):
             )
 
         metric = cachet.set_data_metrics(
-            monitor.get('customuptimeratio'),
+            monitor.get('custom_uptime_ratio'),
             int(time.time()),
             website_config['metric_id']
         )
@@ -204,11 +210,11 @@ class Monitor(object):
         uptime_robot = UptimeRobot(self.api_key)
         success, response = uptime_robot.get_monitors(response_times=1)
         if success:
-            monitors = response.get('monitors').get('monitor')
+            monitors = response.get('monitors')
             for monitor in monitors:
                 if monitor['url'] in self.monitor_list:
                     print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
-                        monitor['friendlyname'],
+                        monitor['friendly_name'],
                         monitor['url'],
                         monitor['id'],
                     ))
