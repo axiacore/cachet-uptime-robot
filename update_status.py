@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import json
-import sys
+import argparse
 import configparser
+import json
 import logging
+import sys
 from urllib import request
 from urllib import parse
 from datetime import datetime, timezone
@@ -246,7 +247,7 @@ class Monitor(object):
 
     def _get_website_config(self, monitor):
         try:
-            return self.monitor_list[monitor.get('url')]
+            return self.monitor_list[monitor.get('id')]
         except KeyError:
             logger.error('Monitor is not valid')
             sys.exit(1)
@@ -259,54 +260,80 @@ class Monitor(object):
         return int(unixtime)
 
 
-if __name__ == "__main__":
-    CONFIG = configparser.ConfigParser()
-    CONFIG.read(sys.argv[1])
-    SECTIONS = CONFIG.sections()
+def main():
+    args = parse_args()
+    monitor_dict, uptime_robot_api_key, cachet = parse_config(args.config_file)
 
-    if not SECTIONS:
+    if args.print_ids:
+        uptime_robot = UptimeRobot(uptime_robot_api_key)
+        success, response = uptime_robot.get_monitors(response_times=1)
+        if success:
+            monitors = response.get('monitors')
+            for monitor in monitors:
+                print('Monitor ID: {1}, Name: {0}.'.format(
+                    monitor['friendly_name'],
+                    monitor['id'],
+                ))
+        else:
+            print('ERROR: No data was returned from UptimeMonitor')
+        sys.exit(1)
+
+    Monitor(monitor_list=monitor_dict, api_key=uptime_robot_api_key, cachet=cachet).update()
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Send data from UptimeRobot to CachetHQ')
+
+    parser.add_argument(
+        'config_file',
+        nargs='?',
+        type=argparse.FileType('r'),
+        help='path to the configuration file (default: config.ini in current folder)',
+        default='config.ini',
+        required=True
+    )
+
+    parser.add_argument(
+        'printIds',
+        action='store_true',
+        help='get UptimeRobot api key from config and print list met monitors from UptimeRobot',
+        dest='print_ids'
+    )
+
+    return parser.parse_args()
+
+
+def parse_config(config_file):
+    config = configparser.ConfigParser()
+    config.read_file(config_file)
+
+    if not config.sections():
         logger.error('File path is not valid')
         sys.exit(1)
 
-    if sys.argv[2] == 'getIds':
-        for element in SECTIONS:
-            if element == 'uptimeRobot':
-                uptime_robot = UptimeRobot(CONFIG[element]['UptimeRobotMainApiKey'])
-                success, response = uptime_robot.get_monitors(response_times=1)
-                if success:
-                    monitors = response.get('monitors')
-                    for monitor in monitors:
-                        print('Monitor ID: {1}, Name: {0}.'.format(
-                            monitor['friendly_name'],
-                            monitor['id'],
-                        ))
-                else:
-                    print('ERROR: No data was returned from UptimeMonitor')
-        sys.exit(1)
-
-    UPTIME_ROBOT_API_KEY = None
-    MONITOR_DICT = {}
-    for element in SECTIONS:
+    uptime_robot_api_key = None
+    monitor_dict = {}
+    for element in config.sections():
         if element == 'uptimeRobot':
-            uptime_robot_api_key = CONFIG[element]['UptimeRobotMainApiKey']
+            uptime_robot_api_key = config[element]['UptimeRobotMainApiKey']
         elif element == 'cachet':
-            cachet_api_key = CONFIG[element]['CachetApiKey']
-            cachet_url = CONFIG[element]['CachetUrl']
+            cachet_api_key = config[element]['CachetApiKey']
+            cachet_url = config[element]['CachetUrl']
         else:
-            elementInt = int(element)
-            MONITOR_DICT[elementInt] = {}
-            if 'CachetApiKey' in CONFIG[element] and 'CachetUrl' in CONFIG[element]:
-                MONITOR_DICT[elementInt].update({
-                    'cachet_api_key': CONFIG[element]['CachetApiKey'],
-                    'cachet_url': CONFIG[element]['CachetUrl'],
+            element_int = int(element)
+            monitor_dict[element_int] = {}
+            if 'CachetApiKey' in config[element] and 'CachetUrl' in config[element]:
+                monitor_dict[element_int].update({
+                    'cachet_api_key': config[element]['CachetApiKey'],
+                    'cachet_url': config[element]['CachetUrl'],
                 })
-            if 'MetricId' in CONFIG[element]:
-                MONITOR_DICT[elementInt].update({
-                    'metric_id': CONFIG[element]['MetricId'],
+            if 'MetricId' in config[element]:
+                monitor_dict[element_int].update({
+                    'component_id': config[element]['MetricId'],
                 })
-            if 'ComponentId' in CONFIG[element]:
-                MONITOR_DICT[elementInt].update({
-                    'component_id': CONFIG[element]['ComponentId'],
+            if 'ComponentId' in config[element]:
+                monitor_dict[element_int].update({
+                    'metric_id': config[element]['ComponentId'],
                 })
 
     cachet = CachetHq(
@@ -314,5 +341,8 @@ if __name__ == "__main__":
         cachet_url=cachet_url,
     )
 
-    MONITOR = Monitor(monitor_list=MONITOR_DICT, api_key=uptime_robot_api_key, cachet=cachet)
-    MONITOR.update()
+    return monitor_dict, uptime_robot_api_key, cachet
+
+
+if __name__ == "__main__":
+    main()
