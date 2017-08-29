@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 import json
 import sys
-import time
 import configparser
+import logging
 from urllib import request
 from urllib import parse
-from datetime import datetime
+from datetime import datetime, timezone
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+CACHETHQ_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 class UptimeRobot(object):
@@ -97,81 +102,76 @@ class CachetHq(object):
                 'components',
                 id_component
             )
-            data = parse.urlencode({
+            data = {
                 'status': component_status,
-            }).encode('utf-8')
-            req = request.Request(
-                url=url,
-                data=data,
-                method='PUT',
-                headers={'X-Cachet-Token': self.cachet_api_key},
-            )
-            response = request.urlopen(req)
-            content = response.read().decode('utf-8')
-            return content
+            }
+
+            return self._request('PUT', url, data)
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
         url = '{0}/api/v1/metrics/{1}/points'.format(
             self.cachet_url,
             id_metric
         )
-
-        data = parse.urlencode({
+        data = {
             'value': value,
             'timestamp': timestamp,
-        }).encode('utf-8')
-        req = request.Request(
-            url=url,
-            data=data,
-            method='POST',
-            headers={'X-Cachet-Token': self.cachet_api_key},
-        )
-        response = request.urlopen(req)
-
-        return json.loads(response.read().decode('utf-8'))
+        }
+        return self._request('POST', url, data)
 
     def get_last_metric_point(self, id_metric):
         url = '{0}/api/v1/metrics/{1}/points'.format(
             self.cachet_url,
             id_metric
         )
+        api_response = self._request('GET', url)
 
-        req = request.Request(
-            url=url,
-            method='GET',
-            headers={'X-Cachet-Token': self.cachet_api_key}
-        )
-        response = request.urlopen(req)
-        content = response.read().decode('utf-8')
-
-        last_page = json.loads(
-            content
-        ).get('meta').get('pagination').get('total_pages')
+        last_page = api_response.get('meta').get('pagination').get('total_pages')
 
         url = '{0}/api/v1/metrics/{1}/points?page={2}'.format(
             self.cachet_url,
             id_metric,
             last_page
         )
+        api_response = self._request('GET', url)
 
-        req = request.Request(
-            url=url,
-            method='GET',
-            headers={'X-Cachet-Token': self.cachet_api_key},
-        )
-        response = request.urlopen(req)
-        content = response.read().decode('utf-8')
+        data = api_response.get('data')
+        if data:
+            # Return the latest data
+            fmt = CACHETHQ_DATE_FORMAT
+            created_at_dates = [
+                datetime.strptime(datum['created_at'], fmt)
+                for datum in data
+            ]
+            max_index = created_at_dates.index(max(created_at_dates))
 
-        if json.loads(content).get('data'):
-            data = json.loads(content).get('data')[0]
+            data = data[max_index]
         else:
             data = {
                 'created_at': datetime.now().date().strftime(
-                    '%Y-%m-%d %H:%M:%S'
+                    CACHETHQ_DATE_FORMAT
                 )
             }
 
         return data
+
+    def _request(self, method, url, data=None):
+        if data:
+            data = parse.urlencode(data).encode('utf-8')
+
+        req = request.Request(
+            url=url,
+            data=data,
+            method=method,
+            headers={
+                'X-Cachet-Token': self.cachet_api_key,
+                'Time-Zone': 'Etc/UTC',
+            },
+        )
+        response = request.urlopen(req)
+        content = response.read().decode('utf-8')
+
+        return json.loads(content)
 
 
 class Monitor(object):
@@ -184,11 +184,7 @@ class Monitor(object):
         """ Posts data to Cachet API.
             Data sent is the value of last `Uptime`.
         """
-        try:
-            website_config = self.monitor_list[monitor.get('id')]
-        except KeyError:
-            print('ERROR: monitor is not valid')
-            sys.exit(1)
+        website_config = self._get_website_config(monitor)
 
         if 'cachet_url' in website_config and 'cachet_api_key' in website_config:
             self.cachet = CachetHq(
@@ -203,12 +199,31 @@ class Monitor(object):
             )
 
         if 'metric_id' in website_config:
-            metric = self.cachet.set_data_metrics(
-                monitor.get('custom_uptime_ratio'),
-                int(time.time()),
+            self.sync_metric(monitor, cachet)
+
+    def sync_metric(self, monitor, cachet):
+        website_config = self._get_website_config(monitor)
+        latest_metric = cachet.get_last_metric_point(website_config['metric_id'])
+
+        logger.info('Number of response times: %d', len(monitor['response_times']))
+        logger.info('Latest metric: %s', latest_metric)
+        unixtime = self._date_str_to_unixtime(latest_metric['created_at'])
+
+        response_times = [
+            x for x in monitor['response_times']
+            if x['datetime'] > unixtime
+        ]
+        response_times.sort(key=lambda x: x['datetime'])
+
+        logger.info('Number of new response times: %d', len(response_times))
+
+        for response_time in response_times:
+            metric = cachet.set_data_metrics(
+                response_time['value'],
+                response_time['datetime'],
                 website_config['metric_id']
             )
-            print('Metric created: {0}'.format(metric))
+            logger.info('Metric created: %s', metric)
 
     def update(self):
         """ Update all monitors uptime and status.
@@ -219,14 +234,29 @@ class Monitor(object):
             monitors = response.get('monitors')
             for monitor in monitors:
                 if monitor['id'] in self.monitor_list:
-                    print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
+                    logger.info(
+                        'Updating monitor %s. URL: %s. ID: %s',
                         monitor['friendly_name'],
                         monitor['url'],
-                        monitor['id'],
-                    ))
+                        monitor['id']
+                    )
                     self.send_data_to_cachet(monitor)
         else:
-            print('ERROR: No data was returned from UptimeMonitor')
+            logger.error('No data was returned from UptimeMonitor')
+
+    def _get_website_config(self, monitor):
+        try:
+            return self.monitor_list[monitor.get('url')]
+        except KeyError:
+            logger.error('Monitor is not valid')
+            sys.exit(1)
+
+    def _date_str_to_unixtime(self, date_str, fmt=CACHETHQ_DATE_FORMAT, tzinfo=timezone.utc):
+        unixtime = datetime.strptime(date_str, fmt) \
+                           .replace(tzinfo=tzinfo) \
+                           .timestamp()
+
+        return int(unixtime)
 
 
 if __name__ == "__main__":
@@ -235,7 +265,7 @@ if __name__ == "__main__":
     SECTIONS = CONFIG.sections()
 
     if not SECTIONS:
-        print('ERROR: File path is not valid')
+        logger.error('File path is not valid')
         sys.exit(1)
 
     if sys.argv[2] == 'getIds':
