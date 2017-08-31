@@ -27,20 +27,20 @@ class UptimeRobot(object):
         """
         endpoint = self.base_url
         data = parse.urlencode({
-            'api_key': format(self.api_key),
-            'format': 'json',
-            # responseTimes - optional (defines if the response time data of each
-            # monitor will be returned. Should be set to 1 for getting them.
-            # Default is 0)
-            'response_times': format(response_times),
-            # logs - optional (defines if the logs of each monitor will be
-            # returned. Should be set to 1 for getting the logs. Default is 0)
-            'logs': format(logs),
-            # customUptimeRatio - optional (defines the number of days to calculate
-            # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
-            # uptime ratios for those periods)
-            'custom_uptime_ratios': format(uptime_ratio)
-        }).encode('utf-8')
+                'api_key': format(self.api_key),
+                'format': 'json',
+                # responseTimes - optional (defines if the response time data of each
+                # monitor will be returned. Should be set to 1 for getting them.
+                # Default is 0)
+                'response_times': format(response_times),
+                # logs - optional (defines if the logs of each monitor will be
+                # returned. Should be set to 1 for getting the logs. Default is 0)
+                'logs': format(logs),
+                # customUptimeRatio - optional (defines the number of days to calculate
+                # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
+                # uptime ratios for those periods)
+                'custom_uptime_ratios': format(uptime_ratio)
+            }).encode('utf-8')
 
         url = request.Request(
             url=endpoint,
@@ -193,13 +193,13 @@ class Monitor(object):
                 cachet_url=website_config['cachet_url'],
             )
 
-        if 'component_id' in website_config:
+        if website_config.get('component_id'):
             self.cachet.update_component(
                 website_config['component_id'],
                 int(monitor.get('status'))
             )
 
-        if 'metric_id' in website_config:
+        if website_config.get('metric_id'):
             self.sync_metric(monitor, self.cachet)
 
     def sync_metric(self, monitor, cachet):
@@ -329,11 +329,11 @@ def parse_config(config_file):
                 })
             if 'MetricId' in config[element]:
                 monitor_dict[element_int].update({
-                    'component_id': config[element]['MetricId'],
+                    'metric_id': config[element].get('MetricId'),
                 })
             if 'ComponentId' in config[element]:
                 monitor_dict[element_int].update({
-                    'metric_id': config[element]['ComponentId'],
+                    'component_id': config[element].get('ComponentId'),
                 })
 
     cachet = CachetHq(
