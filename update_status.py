@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 CACHETHQ_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+USER_AGENT = 'CachetUptimeRobotIntegration'
 
 
 class UptimeRobot(object):
@@ -48,7 +49,7 @@ class UptimeRobot(object):
             method='POST',
             headers={
                 'Content-Type': 'application/x-www-form-urlencoded ',
-                'Cache-Control': 'no-cache'
+                'Cache-Control': 'no-cache',
             },
         )
 
@@ -167,8 +168,10 @@ class CachetHq(object):
             headers={
                 'X-Cachet-Token': self.cachet_api_key,
                 'Time-Zone': 'Etc/UTC',
+                'User-Agent': USER_AGENT,
             },
         )
+
         response = request.urlopen(req)
         content = response.read().decode('utf-8')
 
