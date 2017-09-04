@@ -158,6 +158,8 @@ class CachetHq(object):
         return data
 
     def _request(self, method, url, data=None):
+        logger.info('HTTP %s URL: %s', method, url)
+
         if data:
             data = parse.urlencode(data).encode('utf-8')
 
@@ -244,7 +246,13 @@ class Monitor(object):
                         monitor['url'],
                         monitor['id']
                     )
-                    self.send_data_to_cachet(monitor)
+                    try:
+                        self.send_data_to_cachet(monitor)
+                    except:
+                        logging.exception(
+                            'Exception raised when updating monitor %s',
+                            monitor['friendly_name']
+                        )
         else:
             logger.error('No data was returned from UptimeMonitor')
 
