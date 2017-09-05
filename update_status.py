@@ -248,7 +248,7 @@ class Monitor(object):
                     )
                     try:
                         self.send_data_to_cachet(monitor)
-                    except:
+                    except Exception:
                         logging.exception(
                             'Exception raised when updating monitor %s',
                             monitor['friendly_name']
