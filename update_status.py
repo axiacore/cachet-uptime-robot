@@ -262,6 +262,7 @@ class Monitor(object):
         success, response = uptime_robot.get_monitors(response_times=1)
         if success:
             monitors = response.get('monitors')
+            self._log_unknown_monitors(monitors)
             for monitor in monitors:
                 if monitor['id'] in self.monitor_list:
                     logger.info(
@@ -279,6 +280,20 @@ class Monitor(object):
                         )
         else:
             logger.error('No data was returned from UptimeMonitor')
+
+    def _log_unknown_monitors(self, monitors):
+        configured_monitors = set(self.monitor_list.keys())
+        uptimerobot_monitors = set([
+            monitor['url'] for monitor in monitors
+        ])
+
+        unknown_monitors = configured_monitors - uptimerobot_monitors
+
+        if unknown_monitors:
+            logger.warn(
+                'The following monitors do not exist in UptimeRobot: %s',
+                unknown_monitors
+            )
 
     def _get_website_config(self, monitor):
         try:
