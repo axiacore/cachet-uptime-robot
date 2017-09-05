@@ -99,16 +99,40 @@ class CachetHq(object):
             component_status = self.CACHET_DOWN
 
         if component_status:
-            url = '{0}/api/v1/{1}/{2}'.format(
-                self.cachet_url,
-                'components',
-                id_component
-            )
-            data = {
-                'status': component_status,
-            }
+            component = self.get_component(id_component)
+            current_component_status = component.get('data', {}).get('status')
+            if current_component_status == component_status:
+                # FIXME: This is only necessary for CachetHQ <=2.3. Whenever we
+                # migrate to 2.4, we can remove this check.
+                logger.info(
+                    'No status change on component %s. Skipping update.',
+                    id_component
+                )
+            else:
+                logger.info(
+                    'Updating component %s status: %s -> %s.',
+                    id_component,
+                    current_component_status,
+                    component_status
+                )
+                url = '{0}/api/v1/{1}/{2}'.format(
+                    self.cachet_url,
+                    'components',
+                    id_component
+                )
+                data = {
+                    'status': component_status,
+                }
 
-            return self._request('PUT', url, data)
+                return self._request('PUT', url, data)
+
+    def get_component(self, id_component):
+        url = '{0}/api/v1/components/{1}'.format(
+            self.cachet_url,
+            id_component
+        )
+
+        return self._request('GET', url)
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
         url = '{0}/api/v1/metrics/{1}/points'.format(
