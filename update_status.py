@@ -284,13 +284,13 @@ class Monitor(object):
     def _log_unknown_monitors(self, monitors):
         configured_monitors = set(self.monitor_list.keys())
         uptimerobot_monitors = set([
-            monitor['url'] for monitor in monitors
+            monitor['id'] for monitor in monitors
         ])
 
         unknown_monitors = configured_monitors - uptimerobot_monitors
 
         if unknown_monitors:
-            logger.warn(
+            logger.warning(
                 'The following monitors do not exist in UptimeRobot: %s',
                 unknown_monitors
             )
