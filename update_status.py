@@ -339,14 +339,14 @@ def parse_args():
         nargs='?',
         type=argparse.FileType('r'),
         help='path to the configuration file (default: config.ini in current folder)',
-        default='config.ini',
-        required=True
+        default='config.ini'
     )
 
     parser.add_argument(
-        'printIds',
+        '--printIds',
+        '-p',
         action='store_true',
-        help='get UptimeRobot api key from config and print list met monitors from UptimeRobot',
+        help='print list with monitors from UptimeRobot',
         dest='print_ids'
     )
 
