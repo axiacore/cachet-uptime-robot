@@ -2,12 +2,12 @@
 
 Cachet is an open source status page system, this repository is a Python script that does two things, **first**, it reads the status of a page in UptimeRobot and updates a cachet component based on that status and **second**, it updates a metric with the historic uptime ratio from Uptime Robot.
 
-**Component status: Uptime Robot (left), Cachet (right)**
-
-* Not checked yet: Operational
-* Up: Operational
-* Seems down: Partial outage
-* Down: Major outage
+**Component status**
+|Uptime Robot|Cachet|
+|Not checked yet|Operational|
+|Up|Operational|
+|Seems down|Partial outage|
+|Down|Major outage|
 
 ### Getting started 
 
