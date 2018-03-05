@@ -20,10 +20,10 @@ UptimeRobotMainApiKey = your-api-key
 CachetApiKey = cachet-api-key
 CachetUrl = https://status.mycompany.com
 
-[uptimeRobotMetricID] // This will update ComponentId 1 on the global Cachet
+[uptimeRobotMonitorID1] // This will update ComponentId 1 on the global Cachet
 ComponentId = 1
 
-[uptimeRobotMetricID] // Still possible to use custom cachet settings 
+[uptimeRobotMonitorID2] // Still possible to use custom cachet settings 
 CachetApiKey = cachet-api-key
 CachetUrl = https://status.mycompany.com
 MetricId = 1
@@ -36,6 +36,10 @@ ComponentId = 1
 * `CachetUrl`: URL of the API of the status page you want to show the site availability in.
 * `MetricId`: (Optional) Id of the Cachet metric with site availability.
 * `ComponentId`: (Optional) Id of the component you want to update on each check.
+
+Either `MetricId` or `ComponentId` must be defined per `uptimeRobotMonitorID`
+
+MetricId is special, it will try to sync the graph from UptimeRobot to Cachet. Please keep this in mind at all times.
 
 ### Usage
 
