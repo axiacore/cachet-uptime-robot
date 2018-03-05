@@ -33,7 +33,7 @@ ComponentId = 1
 ```
 
 * `UptimeRobotMainApiKey`: UptimeRobot API key.
-* `uptimeRobotMonitorID`: This exact "monitor" id set in UptimeRobot. You can find the id's by running `python update_status.py config.ini printIds`
+* `uptimeRobotMonitorID`: This exact "monitor" id set in UptimeRobot. You can find the id's by running `python update_status.py config.ini --printIds`
 * `CachetApiKey`:  Cachet API key.
 * `CachetUrl`: URL of the API of the status page you want to show the site availability in.
 * `MetricId`: (Optional) Id of the Cachet metric with site availability.
