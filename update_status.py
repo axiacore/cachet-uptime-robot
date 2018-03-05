@@ -9,7 +9,7 @@ from urllib import parse
 from datetime import datetime, timezone
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('cachet-uptime-robot')
 
 CACHETHQ_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 USER_AGENT = 'CachetUptimeRobotIntegration'
