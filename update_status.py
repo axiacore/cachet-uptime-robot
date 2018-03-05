@@ -100,7 +100,7 @@ class CachetHq(object):
 
         if component_status:
             component = self.get_component(id_component)
-            current_component_status = component.get('data', {}).get('status')
+            current_component_status = int(component.get('data', {}).get('status'))
             if current_component_status == component_status:
                 # FIXME: This is only necessary for CachetHQ <=2.3. Whenever we
                 # migrate to 2.4, we can remove this check.
