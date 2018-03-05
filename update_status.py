@@ -21,26 +21,29 @@ class UptimeRobot(object):
         """
         endpoint = self.base_url
         data = parse.urlencode({
-                'api_key': format(self.api_key),
-                'format': 'json',
-                # responseTimes - optional (defines if the response time data of each
-                # monitor will be returned. Should be set to 1 for getting them.
-                # Default is 0)
-                'response_times': format(response_times),
-                 # logs - optional (defines if the logs of each monitor will be
-                # returned. Should be set to 1 for getting the logs. Default is 0)
-                'logs': format(logs),
-                # customUptimeRatio - optional (defines the number of days to calculate
-                # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
-                # uptime ratios for those periods)
-                'custom_uptime_ratios': format(uptime_ratio)
-            }).encode('utf-8')
+            'api_key': format(self.api_key),
+            'format': 'json',
+            # responseTimes - optional (defines if the response time data of each
+            # monitor will be returned. Should be set to 1 for getting them.
+            # Default is 0)
+            'response_times': format(response_times),
+            # logs - optional (defines if the logs of each monitor will be
+            # returned. Should be set to 1 for getting the logs. Default is 0)
+            'logs': format(logs),
+            # customUptimeRatio - optional (defines the number of days to calculate
+            # the uptime ratio(s) for. Ex: customUptimeRatio=7-30-45 to get the
+            # uptime ratios for those periods)
+            'custom_uptime_ratios': format(uptime_ratio)
+        }).encode('utf-8')
 
         url = request.Request(
             url=endpoint,
             data=data,
             method='POST',
-            headers={'content-type': "application/x-www-form-urlencoded",'cache-control': "no-cache"},
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded ',
+                'Cache-Control': 'no-cache'
+            },
         )
 
         # Verifying in the response is jsonp in otherwise is error
