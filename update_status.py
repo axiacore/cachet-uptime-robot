@@ -172,9 +172,10 @@ class CachetHq(object):
 
 
 class Monitor(object):
-    def __init__(self, monitor_list, api_key):
+    def __init__(self, monitor_list, api_key, cachet):
         self.monitor_list = monitor_list
         self.api_key = api_key
+        self.cachet = cachet
 
     def send_data_to_catchet(self, monitor):
         """ Posts data to Cachet API.
@@ -186,10 +187,11 @@ class Monitor(object):
             print('ERROR: monitor is not valid')
             sys.exit(1)
 
-        cachet = CachetHq(
-            cachet_api_key=website_config['cachet_api_key'],
-            cachet_url=website_config['cachet_url'],
-        )
+        if 'cachet_url' in website_config and 'cachet_api_key' in website_config:
+            self.cachet = CachetHq(
+                cachet_api_key=website_config['cachet_api_key'],
+                cachet_url=website_config['cachet_url'],
+            )
 
         if 'component_id' in website_config:
             self.cachet.update_component(
@@ -238,16 +240,30 @@ if __name__ == "__main__":
     for element in SECTIONS:
         if element == 'uptimeRobot':
             uptime_robot_api_key = CONFIG[element]['UptimeRobotMainApiKey']
+        elif element == 'cachet':
+            cachet_api_key = CONFIG[element]['CachetApiKey']
+            cachet_url = CONFIG[element]['CachetUrl']
         else:
-            MONITOR_DICT[element] = {
-                'cachet_api_key': CONFIG[element]['CachetApiKey'],
-                'cachet_url': CONFIG[element]['CachetUrl'],
-                'metric_id': CONFIG[element]['MetricId'],
-            }
+            elementInt = int(element)
+            MONITOR_DICT[elementInt] = {}
+            if 'CachetApiKey' in CONFIG[element] and 'CachetUrl' in CONFIG[element]:
+                MONITOR_DICT[elementInt].update({
+                    'cachet_api_key': CONFIG[element]['CachetApiKey'],
+                    'cachet_url': CONFIG[element]['CachetUrl'],
+                })
+            if 'MetricId' in CONFIG[element]:
+                MONITOR_DICT[elementInt].update({
+                    'metric_id': CONFIG[element]['MetricId'],
+                })
             if 'ComponentId' in CONFIG[element]:
-                MONITOR_DICT[element].update({
+                MONITOR_DICT[elementInt].update({
                     'component_id': CONFIG[element]['ComponentId'],
                 })
 
-    MONITOR = Monitor(monitor_list=MONITOR_DICT, api_key=uptime_robot_api_key)
+    cachet = CachetHq(
+        cachet_api_key=cachet_api_key,
+        cachet_url=cachet_url,
+    )
+
+    MONITOR = Monitor(monitor_list=MONITOR_DICT, api_key=uptime_robot_api_key, cachet=cachet)
     MONITOR.update()
