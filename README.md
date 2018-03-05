@@ -59,6 +59,11 @@ crontab -e
 
 Edit the crontab file and add this line:
 ```bash
+*/5 * * * * ~/path/run.sh
+```
+
+or if you have you're config in a other location:
+```bash
 */5 * * * * python ~/path/update_status.py ~/path/config.ini
 ```
 
@@ -69,8 +74,12 @@ _Note that the path of the update_status.py & config.ini files may vary dependin
 You can also update your Cachet data manually by running this:
 
 ```python
-python update_status.py config.ini
+python update_status.py
 
->>> Updating monitor MySite. URL: http://mysite.co. ID: 12345678
->>> Metric created: {'data': {'calculated_value': 99.99, 'counter': 1, 'metric_id': 4, 'value': 99.99, 'created_at': '2016-08-12 08:23:10', 'updated_at': '2016-08-12 08:23:10', 'id': 99}}
+INFO:cachet-uptime-robot:Updating monitor MySite. URL: http://mysite.co. ID: 12345678
+INFO:cachet-uptime-robot:HTTP GET URL: https://status.mycompany.com/api/v1/components/1
+INFO:cachet-uptime-robot:No status change on component 1. Skipping update.
+INFO:cachet-uptime-robot:Updating monitor MySite Mail. URL: http://mail.mysite.co. ID: 12345687
+INFO:cachet-uptime-robot:HTTP GET URL: https://status.mycompany.com/api/v1/components/2
+INFO:cachet-uptime-robot:Updating component 2 status: 1 -> 4
 ```
