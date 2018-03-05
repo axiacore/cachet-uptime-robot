@@ -1,0 +1,22 @@
+[uptimeRobot]
+UptimeRobotMainApiKey = your-api-key
+
+[cachet]
+CachetApiKey = cachet-api-key
+CachetUrl = https://status.mycompany.com
+
+[uptimeRobotMetricID1]
+ComponentId = 1
+
+[uptimeRobotMetricID2]
+CachetApiKey = cachet-api-key
+CachetUrl = https://status.mycompany.com
+MetricId = 1
+ComponentId = 2
+
+[uptimeRobotMetricID3]
+MetricId = 2
+ComponentId = 3
+
+[uptimeRobotMetricID4]
+MetricId = 3
