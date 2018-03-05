@@ -192,17 +192,18 @@ class Monitor(object):
         )
 
         if 'component_id' in website_config:
-            cachet.update_component(
+            self.cachet.update_component(
                 website_config['component_id'],
                 int(monitor.get('status'))
             )
 
-        metric = cachet.set_data_metrics(
-            monitor.get('custom_uptime_ratio'),
-            int(time.time()),
-            website_config['metric_id']
-        )
-        print('Metric created: {0}'.format(metric))
+        if 'metric_id' in website_config:
+            metric = self.cachet.set_data_metrics(
+                monitor.get('custom_uptime_ratio'),
+                int(time.time()),
+                website_config['metric_id']
+            )
+            print('Metric created: {0}'.format(metric))
 
     def update(self):
         """ Update all monitors uptime and status.
