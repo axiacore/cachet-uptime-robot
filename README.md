@@ -2,7 +2,7 @@
 
 Cachet is an open source status page system, this repository is a Python script that does two things, **first**, it reads the status of a page in UptimeRobot and updates a cachet component based on that status and **second**, it updates a metric with the historic uptime ratio from Uptime Robot.
 
-**Component status**
+### Component status
 
 | Uptime Robot | Cachet |
 | --- | --- |
@@ -33,7 +33,7 @@ ComponentId = 1
 ```
 
 * `UptimeRobotMainApiKey`: UptimeRobot API key.
-* `uptimeRobotMetricID`: This exact "monitor" id set in UptimeRobot. You can find the id's by running `python update_status.py config.ini getIds`
+* `uptimeRobotMonitorID`: This exact "monitor" id set in UptimeRobot. You can find the id's by running `python update_status.py config.ini printIds`
 * `CachetApiKey`:  Cachet API key.
 * `CachetUrl`: URL of the API of the status page you want to show the site availability in.
 * `MetricId`: (Optional) Id of the Cachet metric with site availability.
@@ -43,10 +43,15 @@ Either `MetricId` or `ComponentId` must be defined per `uptimeRobotMonitorID`
 
 MetricId is special, it will try to sync the graph from UptimeRobot to Cachet. Please keep this in mind at all times.
 
+### Command and args
+`update_status.py <config> [--printIds]`  
+`config` is mandantory and must point to the path where a config file can be found.  
+`--printIds` will print a list with all monitors in UptimeRobot with there name and ID. This ID needed in the config.ini file.
+
+You can always do `update_status.py -h` for more info.
+
 ### Usage
-
 Register a cron that runs `update_status.py` every 5 minutes.
-
 ```bash
 # Open cron file to edit.
 crontab -e
