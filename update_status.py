@@ -182,7 +182,7 @@ class Monitor(object):
             Data sent is the value of last `Uptime`.
         """
         try:
-            website_config = self.monitor_list[monitor.get('url')]
+            website_config = self.monitor_list[monitor.get('id')]
         except KeyError:
             print('ERROR: monitor is not valid')
             sys.exit(1)
@@ -215,7 +215,7 @@ class Monitor(object):
         if success:
             monitors = response.get('monitors')
             for monitor in monitors:
-                if monitor['url'] in self.monitor_list:
+                if monitor['id'] in self.monitor_list:
                     print('Updating monitor {0}. URL: {1}. ID: {2}'.format(
                         monitor['friendly_name'],
                         monitor['url'],
@@ -233,6 +233,22 @@ if __name__ == "__main__":
 
     if not SECTIONS:
         print('ERROR: File path is not valid')
+        sys.exit(1)
+
+    if sys.argv[2] == 'getIds':
+        for element in SECTIONS:
+            if element == 'uptimeRobot':
+                uptime_robot = UptimeRobot(CONFIG[element]['UptimeRobotMainApiKey'])
+                success, response = uptime_robot.get_monitors(response_times=1)
+                if success:
+                    monitors = response.get('monitors')
+                    for monitor in monitors:
+                        print('Monitor ID: {1}, Name: {0}.'.format(
+                            monitor['friendly_name'],
+                            monitor['id'],
+                        ))
+                else:
+                    print('ERROR: No data was returned from UptimeMonitor')
         sys.exit(1)
 
     UPTIME_ROBOT_API_KEY = None
