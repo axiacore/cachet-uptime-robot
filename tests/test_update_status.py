@@ -5,7 +5,7 @@ import update_status
 
 class TestMonitor(object):
     def test_send_data_to_cachet_updates_the_component_status(self, monitor, uptimerobot_monitor):
-        website_config = monitor.monitor_list[uptimerobot_monitor['url']]
+        website_config = monitor.monitor_list[uptimerobot_monitor['id']]
 
         with mock.patch('update_status.CachetHq') as cachet:
             monitor.sync_metric = lambda x, y: None
@@ -18,7 +18,7 @@ class TestMonitor(object):
 
     @pytest.mark.skip
     def test_send_data_to_cachet_updates_data_metrics(self, monitor, uptimerobot_monitor):
-        website_config = monitor.monitor_list[uptimerobot_monitor['url']]
+        website_config = monitor.monitor_list[uptimerobot_monitor['id']]
 
         with mock.patch('update_status.CachetHq') as cachet:
             monitor.sync_metric = lambda x, y: None
@@ -60,11 +60,10 @@ class TestMonitor(object):
             )
 
 
-
 @pytest.fixture
 def monitor_list():
     return {
-        'http://example.org': {
+        '6516846': {
             'cachet_api_key': 'CACHET_API_KEY',
             'cachet_url': 'http://status.example.org',
             'metric_id': '1',
@@ -88,13 +87,13 @@ def cachet_metric():
 
 @pytest.fixture
 def uptimerobot_monitor(monitor_list):
-    monitors_urls = [m for m in monitor_list.keys()]
-    url = monitors_urls[0]
+    monitors_ids = [m for m in monitor_list.keys()]
+    id = monitors_ids[0]
 
     return {
-        'url': url,
-        'friendly_name': url,
-        'id': 'monitor_id',
+        'url': 'monitor_url',
+        'friendly_name': 'friendly_name',
+        'id': id,
         'status': '2',  # UP,
         'custom_uptime_ratio': '100',
         'response_times': [
@@ -113,10 +112,10 @@ def monitor(monitor_list):
     api_key = 'UPTIME_ROBOT_API_KEY'
     return update_status.Monitor(monitor_list, api_key)
 
+
 @pytest.fixture
 def cachet():
     return update_status.CachetHq(
         cachet_api_key='CACHET_API_KEY',
         cachet_url='CACHET_URL'
     )
-
