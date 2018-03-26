@@ -69,6 +69,17 @@ or if you have you're config in a other location:
 
 _Note that the path of the update_status.py & config.ini files may vary depending on the location you cloned the repository_
 
+### Running with docker
+First, make sure the `config.ini` and the `docker-compose.yml` are in the same directory.
+Then run 
+```
+docker-compose run cachet-uptime
+```
+if you want to use cron, add the following line into crontab.
+```
+*/5 * * * * docker-compose -f /path/to/compose/file/docker-compose.yml run cachet-uptime
+```
+
 ### Running manually
 
 You can also update your Cachet data manually by running this:

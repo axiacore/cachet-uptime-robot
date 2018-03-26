@@ -1,0 +1,8 @@
+version: '3'
+services:
+    cachet-uptime:
+        container_name: "cachet-uptime"
+        image: "nyanim/cachet-uptime-robot"
+        volumes:
+         - "./config.ini:/usr/src/app/config.ini"
+        command: sh /usr/src/app/run.sh
