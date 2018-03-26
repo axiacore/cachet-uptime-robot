@@ -6,4 +6,4 @@ DIR=$(pwd)
 cd - > /dev/null
 
 # Run python
-python "$DIR/update_status.py" "$DIR/config.ini"
+python3 "$DIR/update_status.py" "$DIR/config.ini"
