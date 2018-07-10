@@ -132,25 +132,6 @@ class CachetHq(object):
                 )
                 return
 
-            logger.info(
-                'Updating component %s status: %s -> %s.',
-                id_component,
-                current_component_status,
-                component_status
-            )
-
-            url_component = '{0}/api/v1/{1}/{2}'.format(
-                self.cachet_url,
-                'components',
-                id_component
-            )
-
-            data_component = {
-                'status': component_status,
-            }
-
-            api_response_component = self._request('PUT', url_component, data_component)
-
             api_response_incident = {}
 
             if component_status in [self.CACHET_PERFORMANCE_ISSUES, self.CACHET_SEEMS_DOWN, self.CACHET_DOWN]:
@@ -160,13 +141,10 @@ class CachetHq(object):
                     'incidents'
                 )
 
-                update_component_name = current_component_data.get('name')
-                update_component_status = current_component_data.get('status_name')
-
                 data_incident = {
                     'component_id': id_component,
-                    'component_status': id_component,
-                    'name': 'xService: {0} - Status: {1}'.format(update_component_name, self.get_cachet_status_name(component_status)),
+                    'component_status': component_status,
+                    'name': 'Service: {0} - Status: {1}'.format(current_component_data.get('name'), self.get_cachet_status_name(component_status)),
                     'message': 'Details TBD',
                     'status': self.CACHET_INCIDENT_INVESTIGATING,
                     'visible': 1
@@ -196,6 +174,8 @@ class CachetHq(object):
                     )
 
                     data_incident = {
+                        'component_id': id_component,
+                        'component_status': component_status,
                         'status': self.CACHET_INCIDENT_FIXED
                     }
 
@@ -218,10 +198,11 @@ class CachetHq(object):
 
         return self._request('GET', url)
 
-    def get_latest_component_incident(self, id_component):
-        url = '{0}/api/v1/incidents/?component_id={1}'.format(
+    def get_latest_component_incident(self, id_component, status=1):
+        url = '{0}/api/v1/incidents/?component_id={1}&status={2}'.format(
             self.cachet_url,
-            id_component
+            id_component,
+            status
         )
 
         api_response_data = self._request('GET', url).get('data')
