@@ -73,15 +73,33 @@ class CachetHq(object):
     UPTIME_ROBOT_SEEMS_DOWN = 8
     UPTIME_ROBOT_DOWN = 9
 
-    # Cachet status list
+    # Cachet component status list
     CACHET_OPERATIONAL = 1
     CACHET_PERFORMANCE_ISSUES = 2
     CACHET_SEEMS_DOWN = 3
     CACHET_DOWN = 4
 
+    # Cachet incident status list
+    CACHET_INCIDENT_INVESTIGATING = 1
+    CACHET_INCIDENT_IDENTIFIED = 2
+    CACHET_INCIDENT_WATCHING = 3
+    CACHET_INCIDENT_FIXED = 4
+
     def __init__(self, cachet_api_key, cachet_url):
         self.cachet_api_key = cachet_api_key
         self.cachet_url = cachet_url
+
+
+    def get_cachet_status_name(self, status_id):
+        switcher = {
+            self.CACHET_OPERATIONAL: "Operational",
+            self.CACHET_PERFORMANCE_ISSUES: "Performance Issues",
+            self.CACHET_SEEMS_DOWN: "Seems Down",
+            self.CACHET_DOWN: "Down"
+        }
+
+        return switcher.get(status_id, "Invalid status")
+
 
     def update_component(self, id_component=1, status=None):
         component_status = None
@@ -100,7 +118,11 @@ class CachetHq(object):
 
         if component_status:
             component = self.get_component(id_component)
-            current_component_status = int(component.get('data', {}).get('status'))
+
+            #logger.info(component)
+            current_component_data = component.get('data', {})
+            current_component_status = int(current_component_data.get('status'))
+
             if current_component_status == component_status:
                 # FIXME: This is only necessary for CachetHQ <=2.3. Whenever we
                 # migrate to 2.4, we can remove this check.
@@ -108,23 +130,65 @@ class CachetHq(object):
                     'No status change on component %s. Skipping update.',
                     id_component
                 )
-            else:
-                logger.info(
-                    'Updating component %s status: %s -> %s.',
-                    id_component,
-                    current_component_status,
-                    component_status
-                )
-                url = '{0}/api/v1/{1}/{2}'.format(
+                return
+
+            api_response_incident = {}
+
+            if component_status in [self.CACHET_PERFORMANCE_ISSUES, self.CACHET_SEEMS_DOWN, self.CACHET_DOWN]:
+
+                url_incident = '{0}/api/v1/{1}'.format(
                     self.cachet_url,
-                    'components',
-                    id_component
+                    'incidents'
                 )
-                data = {
-                    'status': component_status,
+
+                data_incident = {
+                    'component_id': id_component,
+                    'component_status': component_status,
+                    'name': 'Service: {0} - Status: {1}'.format(current_component_data.get('name'), self.get_cachet_status_name(component_status)),
+                    'message': 'Details TBD',
+                    'status': self.CACHET_INCIDENT_INVESTIGATING,
+                    'visible': 1
                 }
 
-                return self._request('PUT', url, data)
+                api_response_incident = self._request('POST', url_incident, data_incident)
+
+                logger.info(
+                    'Created incident %s (from component %s) status: %s (%s).',
+                    api_response_incident.get('data').get('id'),
+                    id_component,
+                    self.CACHET_INCIDENT_INVESTIGATING,
+                    api_response_incident.get('data').get('human_status')
+                )
+
+            else:
+
+                last_incident = self.get_latest_component_incident(id_component)
+
+                if last_incident:
+                    id_incident = last_incident.get('id')
+
+                    url_incident = '{0}/api/v1/{1}/{2}'.format(
+                        self.cachet_url,
+                        'incidents',
+                        id_incident
+                    )
+
+                    data_incident = {
+                        'component_id': id_component,
+                        'component_status': component_status,
+                        'status': self.CACHET_INCIDENT_FIXED
+                    }
+
+                    api_response_incident = self._request('PUT', url_incident, data_incident)
+
+                    logger.info(
+                        'Updated incident %s (from component %s) status: %s.',
+                        id_incident,
+                        id_component,
+                        self.CACHET_INCIDENT_FIXED,
+                    )
+
+            return api_response_incident
 
     def get_component(self, id_component):
         url = '{0}/api/v1/components/{1}'.format(
@@ -133,6 +197,20 @@ class CachetHq(object):
         )
 
         return self._request('GET', url)
+
+    def get_latest_component_incident(self, id_component, status=1):
+        url = '{0}/api/v1/incidents/?component_id={1}&status={2}'.format(
+            self.cachet_url,
+            id_component,
+            status
+        )
+
+        api_response_data = self._request('GET', url).get('data')
+
+        if api_response_data and len(api_response_data) > 0:
+            return api_response_data[0]
+
+        return {}
 
     def set_data_metrics(self, value, timestamp, id_metric=1):
         url = '{0}/api/v1/metrics/{1}/points'.format(
